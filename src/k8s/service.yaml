@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gpu-app-test
+  labels:
+    app: gpu-app-test
+spec:
+  type: NodePort
+  ports:
+    - name: app1-ssh
+      port: 30000
+      targetPort: 22
+      nodePort: 30000
+  selector:
+    app: gpu-app-test
