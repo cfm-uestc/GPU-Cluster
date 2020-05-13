@@ -1,6 +1,6 @@
 using System;
 
-namespace Scheduler.Models
+namespace GPUCluster.WebService.Models
 {
     public class ErrorViewModel
     {

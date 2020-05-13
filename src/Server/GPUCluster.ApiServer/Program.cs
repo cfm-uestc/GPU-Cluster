@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Scheduler
+namespace GPUCluster.ApiServer
 {
     public class Program
     {
