@@ -206,7 +206,7 @@ bbbbb       Ready    master   5m26s   v1.18.2
 
 ### Add GPU support
 
-#### Routine 1 (only for test): Use NVIDIA k8s-device-plugin
+#### Use NVIDIA k8s-device-plugin
 
 Before creating, install `nvidia-container-runtime` and check docker default runtime is `nvidia-container-runtime`.
  
@@ -244,3 +244,20 @@ Allocatable:
 ```
 
 When `nvidia.com/gpu` appears in `Capacity` and `Allocatable`, installation is completed (K8s, Pod-Network and nvidia-docker).
+
+
+## Prepare a private repositry to hold generated images
+
+You can either setup an externally-accessible registry (https://docs.docker.com/registry/deploying/#run-an-externally-accessible-registry), or store in [Docker Hub](https://hub.docker.com/).
+
+*Useful commands*:
+
+```bash
+# build a docker image, and tag as domain/name:tag
+docker build -t domain/name:tag .
+# tag a docker
+docker tag aaa bbb
+# push a docker (assume you are already login)
+docker push domain/name:tag
+```
+
