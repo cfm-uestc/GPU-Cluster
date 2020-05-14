@@ -18,7 +18,7 @@
     "GPUCluster.WebService": {
       "commandName": "Project",
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:5001;http://localhost:5000",
+      "applicationUrl": "https://localhost:19274;http://localhost:19273",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

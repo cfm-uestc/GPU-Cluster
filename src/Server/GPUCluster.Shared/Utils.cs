@@ -2,7 +2,11 @@
 
 namespace GPUCluster.Shared
 {
-    public class Utils
+    public static class Extensions
     {
+        public static int ToMiB(this int bytes)
+        {
+            return bytes / (1024 * 1024);
+        }
     }
 }
