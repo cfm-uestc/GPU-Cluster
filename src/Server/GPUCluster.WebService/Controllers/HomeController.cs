@@ -24,10 +24,6 @@ namespace GPUCluster.WebService.Controllers
         {
             return View(new IndexViewModel());
         }
-        public IActionResult Containers()
-        {
-            return View(new ContainerViewModel());
-        }
         public IActionResult Privacy()
         {
             return View();
