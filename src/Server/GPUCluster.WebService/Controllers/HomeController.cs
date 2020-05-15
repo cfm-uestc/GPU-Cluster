@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using GPUCluster.WebService.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace GPUCluster.WebService.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -20,9 +22,12 @@ namespace GPUCluster.WebService.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            return View(new IndexViewModel());
         }
-
+        public IActionResult Containers()
+        {
+            return View(new ContainerViewModel());
+        }
         public IActionResult Privacy()
         {
             return View();

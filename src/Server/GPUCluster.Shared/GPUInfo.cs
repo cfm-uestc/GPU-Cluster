@@ -18,11 +18,8 @@ namespace GPUCluster.Shared
             CudaDeviceProperties props = CudaContext.GetDeviceInfo(deviceID);
             DeviceID = deviceID;
             DeviceProperties = props;
-            using (CudaContext ctx = new CudaContext())
-            {
-                TotalVRam = ctx.GetTotalDeviceMemorySize();
-                FreeVRam = ctx.GetFreeDeviceMemorySize();
-            }
+            TotalVRam = props.TotalGlobalMemory;
+            FreeVRam = props.TotalConstantMemory;
         }
         public override string ToString()
         {
