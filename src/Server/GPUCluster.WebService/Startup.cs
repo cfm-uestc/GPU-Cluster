@@ -6,6 +6,7 @@ using GPUCluster.Shared.Models.Instance;
 using GPUCluster.WebService.Areas.Identity.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +33,9 @@ namespace GPUCluster.WebService
             services.AddDbContext<IdentityDataContext>(options =>
                 options.UseSqlite(
                     Configuration.GetConnectionString("IdentityDataContextConnection")));
+
+            services.AddTransient<IUserProvider, UserIdProvider>();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
                 .AddEntityFrameworkStores<IdentityDataContext>();

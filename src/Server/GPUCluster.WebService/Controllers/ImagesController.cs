@@ -7,30 +7,26 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using GPUCluster.Shared.Models.Workload;
 using GPUCluster.WebService.Areas.Identity.Data;
-using Microsoft.AspNetCore.Identity;
-using GPUCluster.Shared.Models.Instance;
 
 namespace GPUCluster.WebService.Controllers
 {
-    public class ContainersController : Controller
+    public class ImagesController : Controller
     {
-        private readonly UserManager<ApplicationUser> _manager;
         private readonly IdentityDataContext _context;
 
-        public ContainersController(IdentityDataContext context, UserManager<ApplicationUser> userManager)
+        public ImagesController(IdentityDataContext context)
         {
             _context = context;
-            _manager = userManager;
         }
 
-        // GET: Containers
+        // GET: Images
         public async Task<IActionResult> Index()
         {
-            var identityDataContext = _context.Container.Include(c => c.Image).Include(c => c.User);
+            var identityDataContext = _context.Image.Include(i => i.User);
             return View(await identityDataContext.ToListAsync());
         }
 
-        // GET: Containers/Details/5
+        // GET: Images/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -38,45 +34,42 @@ namespace GPUCluster.WebService.Controllers
                 return NotFound();
             }
 
-            var container = await _context.Container
-                .Include(c => c.Image)
-                .Include(c => c.User)
-                .FirstOrDefaultAsync(m => m.ContainerID == id);
-            if (container == null)
+            var image = await _context.Image
+                .Include(i => i.User)
+                .FirstOrDefaultAsync(m => m.ImageID == id);
+            if (image == null)
             {
                 return NotFound();
             }
 
-            return View(container);
+            return View(image);
         }
 
-        // GET: Containers/Create
+        // GET: Images/Create
         public IActionResult Create()
         {
-            ViewData["ImageID"] = new SelectList(_context.Set<Image>(), "ImageID", "ImageID");
             ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id");
             return View();
         }
 
-        // POST: Containers/Create
+        // POST: Images/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to, for 
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ContainerID,UserID,ImageID,Name,IsRunning")] Container container)
+        public async Task<IActionResult> Create([Bind("ImageID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(container);
+                _context.Add(image);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["ImageID"] = new SelectList(_context.Set<Image>(), "ImageID", "ImageID", container.ImageID);
-            ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", container.UserID);
-            return View(container);
+            ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", image.UserID);
+            return View(image);
         }
 
-        // GET: Containers/Edit/5
+        // GET: Images/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -84,24 +77,23 @@ namespace GPUCluster.WebService.Controllers
                 return NotFound();
             }
 
-            var container = await _context.Container.FindAsync(id);
-            if (container == null)
+            var image = await _context.Image.FindAsync(id);
+            if (image == null)
             {
                 return NotFound();
             }
-            ViewData["ImageID"] = new SelectList(_context.Set<Image>(), "ImageID", "ImageID", container.ImageID);
-            ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", container.UserID);
-            return View(container);
+            ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", image.UserID);
+            return View(image);
         }
 
-        // POST: Containers/Edit/5
+        // POST: Images/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to, for 
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ContainerID,UserID,ImageID,Name,IsRunning")] Container container)
+        public async Task<IActionResult> Edit(int id, [Bind("ImageID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
         {
-            if (id != container.ContainerID)
+            if (id != image.ImageID)
             {
                 return NotFound();
             }
@@ -110,12 +102,12 @@ namespace GPUCluster.WebService.Controllers
             {
                 try
                 {
-                    _context.Update(container);
+                    _context.Update(image);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!ContainerExists(container.ContainerID))
+                    if (!ImageExists(image.ImageID))
                     {
                         return NotFound();
                     }
@@ -126,12 +118,11 @@ namespace GPUCluster.WebService.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["ImageID"] = new SelectList(_context.Set<Image>(), "ImageID", "ImageID", container.ImageID);
-            ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", container.UserID);
-            return View(container);
+            ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", image.UserID);
+            return View(image);
         }
 
-        // GET: Containers/Delete/5
+        // GET: Images/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -139,32 +130,31 @@ namespace GPUCluster.WebService.Controllers
                 return NotFound();
             }
 
-            var container = await _context.Container
-                .Include(c => c.Image)
-                .Include(c => c.User)
-                .FirstOrDefaultAsync(m => m.ContainerID == id);
-            if (container == null)
+            var image = await _context.Image
+                .Include(i => i.User)
+                .FirstOrDefaultAsync(m => m.ImageID == id);
+            if (image == null)
             {
                 return NotFound();
             }
 
-            return View(container);
+            return View(image);
         }
 
-        // POST: Containers/Delete/5
+        // POST: Images/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var container = await _context.Container.FindAsync(id);
-            _context.Container.Remove(container);
+            var image = await _context.Image.FindAsync(id);
+            _context.Image.Remove(image);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool ContainerExists(int id)
+        private bool ImageExists(int id)
         {
-            return _context.Container.Any(e => e.ContainerID == id);
+            return _context.Image.Any(e => e.ImageID == id);
         }
     }
 }

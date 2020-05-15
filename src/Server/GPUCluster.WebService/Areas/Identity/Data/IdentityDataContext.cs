@@ -12,9 +12,11 @@ namespace GPUCluster.WebService.Areas.Identity.Data
 {
     public class IdentityDataContext : IdentityDbContext<ApplicationUser>
     {
-        public IdentityDataContext(DbContextOptions<IdentityDataContext> options)
+        private readonly IUserProvider _userProvider;
+        public IdentityDataContext(DbContextOptions<IdentityDataContext> options, IUserProvider userProvider)
             : base(options)
         {
+            _userProvider = userProvider;
         }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -23,8 +25,11 @@ namespace GPUCluster.WebService.Areas.Identity.Data
             // Customize the ASP.NET Identity model and override the defaults if needed.
             // For example, you can rename the ASP.NET Identity table names and more.
             // Add your customizations after calling base.OnModelCreating(builder);
+            builder.Entity<GPUCluster.Shared.Models.Workload.Container>().HasQueryFilter(f => f.UserID == _userProvider.GetUserId());
         }
 
         public DbSet<GPUCluster.Shared.Models.Workload.Container> Container { get; set; }
+
+        public DbSet<GPUCluster.Shared.Models.Workload.Image> Image { get; set; }
     }
 }
