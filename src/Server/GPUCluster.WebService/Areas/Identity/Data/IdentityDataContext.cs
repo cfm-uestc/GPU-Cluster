@@ -26,6 +26,7 @@ namespace GPUCluster.WebService.Areas.Identity.Data
             // For example, you can rename the ASP.NET Identity table names and more.
             // Add your customizations after calling base.OnModelCreating(builder);
             builder.Entity<GPUCluster.Shared.Models.Workload.Container>().HasQueryFilter(f => f.UserID == _userProvider.GetUserId());
+            builder.Entity<GPUCluster.Shared.Models.Workload.Image>().HasQueryFilter(f => f.UserID == _userProvider.GetUserId()).HasIndex(f => f.Tag).IsUnique();
         }
 
         public DbSet<GPUCluster.Shared.Models.Workload.Container> Container { get; set; }

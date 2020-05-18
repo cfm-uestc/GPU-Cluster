@@ -1,0 +1,23 @@
+@model GPUCluster.Shared.Models.Workload.Image
+@{
+    var CurrentUser = ViewData["CurrentUser"] as GPUCluster.Shared.Models.Instance.ApplicationUser;
+}
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<div class="form-group">
+    <label asp-for="BaseImageTag" class="control-label"></label>
+    <div>Give a tag to name your image</div>
+    <input asp-for="BaseImageTag" class="form-control" value="@Model?.BaseImageTag" placeholder="baseimage" />
+    <span asp-validation-for="BaseImageTag" class="text-danger"></span>
+</div>
+<div class="form-group">
+    <label asp-for="Tag" class="control-label"></label>
+    <div>Give a tag to name your image</div>
+    <div>
+        <span>@CurrentUser.UserName</span>_<input asp-for="Tag" class="form-control" value="@Model?.ImageTagSuffix" />
+    </div>
+    <span asp-validation-for="Tag" class="text-danger"></span>
+</div>
+<div class="form-group">
+    <input id="create-submit" type="submit" value="Create" disabled="@ViewBag.Creating" class="btn btn-primary" />
+</div>

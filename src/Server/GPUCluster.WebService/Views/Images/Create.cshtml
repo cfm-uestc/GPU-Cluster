@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Create";
+    var CurrentUser = ViewData["CurrentUser"] as GPUCluster.Shared.Models.Instance.ApplicationUser;
 }
 
 <h1>Create</h1>
@@ -10,29 +11,9 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="UserID" class="control-label"></label>
-                <select asp-for="UserID" class ="form-control" asp-items="ViewBag.UserID"></select>
-            </div>
-            <div class="form-group">
-                <label asp-for="Tag" class="control-label"></label>
-                <input asp-for="Tag" class="form-control" />
-                <span asp-validation-for="Tag" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="CreateTime" class="control-label"></label>
-                <input asp-for="CreateTime" class="form-control" />
-                <span asp-validation-for="CreateTime" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="LastModifiedTime" class="control-label"></label>
-                <input asp-for="LastModifiedTime" class="form-control" />
-                <span asp-validation-for="LastModifiedTime" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+        <form id="create-form" asp-action="Create" data-ajax="true" data-ajax-method="POST" data-ajax-mode="replace" data-ajax-success="createFinish" data-ajax-update="#ajax-form">
+            <div id="ajax-form">
+                @await Html.PartialAsync("Partial/_CreateForm", ViewData)
             </div>
         </form>
     </div>
@@ -44,4 +25,10 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        createFinish = function (xhr) {
+            if(xhr.)
+            $.ajax()
+        };
+    </script>
 }

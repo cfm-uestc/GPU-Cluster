@@ -1,0 +1,9 @@
+@{
+    var notReady = (ViewBag.Ready == null) || (!ViewBag.Ready);
+}
+<div class="form-group">
+    <div>@ViewData["CreateResult"]</div>
+</div>
+<div>
+    <button asp-action="CreateFinish" disabled="@notReady" class="btn btn-primary">Continue</button>
+</div>

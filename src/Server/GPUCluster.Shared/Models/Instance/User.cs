@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace GPUCluster.Shared.Models.Instance
 {
-    public class ApplicationUser: IdentityUser
+    public class ApplicationUser : IdentityUser
     {
         public ICollection<Container> Containers { get; set; }
     }

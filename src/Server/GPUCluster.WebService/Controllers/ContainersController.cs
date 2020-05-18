@@ -14,13 +14,13 @@ namespace GPUCluster.WebService.Controllers
 {
     public class ContainersController : Controller
     {
-        private readonly UserManager<ApplicationUser> _manager;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly IdentityDataContext _context;
 
         public ContainersController(IdentityDataContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
-            _manager = userManager;
+            _userManager = userManager;
         }
 
         // GET: Containers
@@ -31,7 +31,7 @@ namespace GPUCluster.WebService.Controllers
         }
 
         // GET: Containers/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(Guid? id)
         {
             if (id == null)
             {
@@ -99,7 +99,7 @@ namespace GPUCluster.WebService.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ContainerID,UserID,ImageID,Name,IsRunning")] Container container)
+        public async Task<IActionResult> Edit(Guid id, [Bind("ContainerID,UserID,ImageID,Name,IsRunning")] Container container)
         {
             if (id != container.ContainerID)
             {
@@ -132,7 +132,7 @@ namespace GPUCluster.WebService.Controllers
         }
 
         // GET: Containers/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(Guid? id)
         {
             if (id == null)
             {
@@ -162,7 +162,7 @@ namespace GPUCluster.WebService.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private bool ContainerExists(int id)
+        private bool ContainerExists(Guid id)
         {
             return _context.Container.Any(e => e.ContainerID == id);
         }

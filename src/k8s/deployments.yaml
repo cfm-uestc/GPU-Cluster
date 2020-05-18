@@ -1,45 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app1
-  labels:
-    app: gpu-app-test
-spec:
-  selector:
-    matchLabels:
-      app: gpu-app-test
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      labels:
-        app: gpu-app-test
-    spec:
-      containers:
-        - image: zhongbazhu/cfm_private:base
-          name: app1
-          resources:
-            limits:
-              nvidia.com/gpu: 2
-          env:
-            - name: MYSQL_ROOT_PASSWORD
-              value: "test"
-          ports:
-            - containerPort: 22
-              name: ssh
-          volumeMounts:
-            - name: app1-storage
-              mountPath: /home
-      imagePullSecrets:
-        - name: regcred
-      volumes:
-        - name: app1-storage
-          persistentVolumeClaim:
-            claimName: gpu-pv-claim
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: app2
   labels:
     app: gpu-app-test
@@ -61,8 +22,8 @@ spec:
             limits:
               nvidia.com/gpu: 2
           env:
-            - name: MYSQL_ROOT_PASSWORD
-              value: "test"
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: ""
           ports:
             - containerPort: 22
               name: ssh
