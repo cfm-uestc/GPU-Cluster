@@ -5,5 +5,5 @@
     <div>@ViewData["CreateResult"]</div>
 </div>
 <div>
-    <button asp-action="CreateFinish" disabled="@notReady" class="btn btn-primary">Continue</button>
+    <a asp-action="RedirectIndex" disabled="@notReady" class="btn btn-primary">Continue</a>
 </div>

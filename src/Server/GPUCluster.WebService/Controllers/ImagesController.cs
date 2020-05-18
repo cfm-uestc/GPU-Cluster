@@ -10,6 +10,8 @@ using GPUCluster.WebService.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using GPUCluster.Shared.Models.Instance;
 using System.IO;
+using GPUCluster.WebService.Service;
+using Lib.AspNetCore.ServerSentEvents;
 
 namespace GPUCluster.WebService.Controllers
 {
@@ -17,11 +19,13 @@ namespace GPUCluster.WebService.Controllers
     {
         private readonly IdentityDataContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IImageCreationSSEService _imageCreationSSEService;
 
-        public ImagesController(IdentityDataContext context, UserManager<ApplicationUser> userManager)
+        public ImagesController(IdentityDataContext context, UserManager<ApplicationUser> userManager, IImageCreationSSEService imageCreationSSEService)
         {
             _context = context;
             _userManager = userManager;
+            _imageCreationSSEService = imageCreationSSEService;
         }
 
         // GET: Images
@@ -29,6 +33,11 @@ namespace GPUCluster.WebService.Controllers
         {
             var identityDataContext = _context.Image.Include(i => i.User);
             return View(await identityDataContext.ToListAsync());
+        }
+        // GET: RedirectIndex
+        public IActionResult RedirectIndex()
+        {
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Images/Details/5
@@ -57,9 +66,57 @@ namespace GPUCluster.WebService.Controllers
             return View();
         }
 
-        public IActionResult CreateFinish()
+        private async Task pushDockerBuildStream(IServerSentEventsClient client, Stream buildOutput)
         {
-            return RedirectToAction(nameof(Index));
+            using (var reader = new StreamReader(buildOutput))
+            {
+                while (!reader.EndOfStream)
+                {
+                    await client.SendEventAsync(new ServerSentEvent()
+                    {
+                        Type = "BuildOutput",
+                        Data = new string[] { await reader.ReadLineAsync() }
+                    });
+                }
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateFinish([Bind("BaseImageTag, ImageID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
+        {
+            var user = await _userManager.GetUserAsync(this.User);
+            image = await validateImage(user, image);
+            var clients = _imageCreationSSEService.GetClients();
+            using (Stream result = await image.CreateAndBuildAsync())
+            {
+                var currentClient = clients.FirstOrDefault(x => _userManager.GetUserId(x.User) == user.Id);
+                if (currentClient != null)
+                {
+                    pushDockerBuildStream(currentClient, result);
+                }
+            }
+            ViewData["CreateResult"] = "Test";
+            _context.Add(image);
+            await _context.SaveChangesAsync();
+            ViewBag.Ready = true;
+            return PartialView("Partial/_CreateIndicator", ViewBag);
+        }
+
+        private async Task<Image> validateImage(ApplicationUser user, Image image)
+        {
+            image.User = user;
+            if (!image.Tag.StartsWith(image.User.UserName + "_"))
+            {
+                image.Tag = $"{image.User.UserName}_{image.Tag}";
+            }
+            if ((await _context.Image.FirstOrDefaultAsync(f => f.Tag == image.Tag)) != null)
+            {
+                throw new ArgumentException();
+            }
+            image.CreateTime = DateTime.Now;
+            image.LastModifiedTime = image.CreateTime;
+            return image;
         }
 
         // POST: Images/Create
@@ -67,38 +124,23 @@ namespace GPUCluster.WebService.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ImageID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
+        public async Task<IActionResult> Create([Bind("BaseImageTag,ImageID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
         {
-            ViewData["CurrentUser"] = await _userManager.GetUserAsync(this.User);
+            ApplicationUser user = await _userManager.GetUserAsync(this.User);
+            ViewData["CurrentUser"] = user;
             if (ModelState.IsValid)
             {
-                image.User = await _userManager.GetUserAsync(this.User);
-                if (!image.Tag.StartsWith(image.User.UserName + "_"))
+                try
                 {
-                    image.Tag = $"{image.User.UserName}_{image.Tag}";
+                    image = await validateImage(user, image);
+                    ViewBag.Creating = true;
+                    return PartialView("Partial/_CreateForm", image);
                 }
-                if ((await _context.Image.FirstOrDefaultAsync(f => f.Tag == image.Tag)) != null)
+                catch (ArgumentException)
                 {
                     ModelState.AddModelError("Tag", "Image Tag already exists.");
                     return PartialView("Partial/_CreateForm", image);
                 }
-                image.CreateTime = DateTime.Now;
-                image.LastModifiedTime = image.CreateTime;
-                ViewBag.Creating = true;
-                ViewData["CreateResult"] = "Preparing Dockerfile to build..." + Environment.NewLine;
-                Stream result = await image.CreateAndBuildAsync();
-                using (var reader = new StreamReader(result))
-                {
-                    while (!reader.EndOfStream)
-                    {
-                        var line = await reader.ReadLineAsync();
-                        ViewData["CreateResult"] += line;
-                    }
-                }
-                _context.Add(image);
-                await _context.SaveChangesAsync();
-                ViewBag.Ready = true;
-                return PartialView("Partial/_CreateIndicator");
             }
             return View(image);
         }

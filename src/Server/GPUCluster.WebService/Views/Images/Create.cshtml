@@ -10,7 +10,7 @@
 <h4>Image</h4>
 <hr />
 <div class="row">
-    <div class="col-md-4">
+    <div id="main" onload="listenOutputStream" class="col-md-4">
         <form id="create-form" asp-action="Create" data-ajax="true" data-ajax-method="POST" data-ajax-mode="replace" data-ajax-success="createFinish" data-ajax-update="#ajax-form">
             <div id="ajax-form">
                 @await Html.PartialAsync("Partial/_CreateForm", ViewData)
@@ -27,8 +27,27 @@
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
         createFinish = function (xhr) {
-            if(xhr.)
-            $.ajax()
+            console.log($("#create-submit").prop('disabled'))
+            if($("#create-submit").prop('disabled')){
+                var evtSource = new EventSource("Create/sse");
+                evtSource.addEventListener("BuildOutput", function(e) { 
+                    console.log(e.data)
+                });
+                $.ajax({
+                    url: "CreateFinish",
+                    type: "POST",
+                    data: $("#create-form").serializeArray(),
+                    success: function (data, status, xhr) {
+                        $("#main").append(data)
+                    },
+                });
+            }
+        };
+        listenOutputStream = function () {
+            var evtSource = new EventSource("Create/sse");
+            evtSource.addEventListener("BuildOutput", function(e) { 
+                console.log(e.data)
+            });
         };
     </script>
 }

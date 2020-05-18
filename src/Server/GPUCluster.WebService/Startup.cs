@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using GPUCluster.Shared.Models.Instance;
 using GPUCluster.WebService.Areas.Identity.Data;
+using GPUCluster.WebService.Service;
+using Lib.AspNetCore.ServerSentEvents;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -33,12 +35,14 @@ namespace GPUCluster.WebService
             services.AddDbContext<IdentityDataContext>(options =>
                 options.UseSqlite(
                     Configuration.GetConnectionString("IdentityDataContextConnection")));
+            services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
+                .AddEntityFrameworkStores<IdentityDataContext>();
 
             services.AddTransient<IUserProvider, UserIdProvider>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-            services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
-                .AddEntityFrameworkStores<IdentityDataContext>();
+            services.AddServerSentEvents<IImageCreationSSEService, ImageCreationSSEService>();
+
             services.AddControllersWithViews();
             services.AddRazorPages();
         }
@@ -64,6 +68,8 @@ namespace GPUCluster.WebService
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.MapServerSentEvents<ImageCreationSSEService>("/Images/Create/sse");
 
             app.UseEndpoints(endpoints =>
             {

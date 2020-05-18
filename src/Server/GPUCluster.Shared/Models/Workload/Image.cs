@@ -11,15 +11,20 @@ namespace GPUCluster.Shared.Models.Workload
 {
     public class Image
     {
+        public Image()
+        {
+            BaseImageTag = "nvidia/cuda";
+        }
+
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid ImageID { get; set; }
         public string UserID { get; set; }
         public ApplicationUser User { get; set; }
         public ICollection<Container> Containers { get; set; }
-        [Display(Name="Built image tag")]
+        [Display(Name = "Built image tag")]
         public string Tag { get; set; }
         public string ImageTagSuffix { get => User == null ? Tag : Tag.StartsWith(User.UserName + "_") ? Tag.Substring((User.UserName + "_").Length) : Tag; }
-        [Display(Name="Parent Docker image based-on")]
+        [Display(Name = "Parent Docker image based-on")]
         public string BaseImageTag { get; set; }
 
         [DataType(DataType.DateTime)]

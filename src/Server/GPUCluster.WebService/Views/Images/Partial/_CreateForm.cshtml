@@ -1,6 +1,7 @@
 @model GPUCluster.Shared.Models.Workload.Image
 @{
     var CurrentUser = ViewData["CurrentUser"] as GPUCluster.Shared.Models.Instance.ApplicationUser;
+    var modelJson = @Model == null ? null : @Html.Raw(Json.Serialize(@Model));
 }
 
 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
