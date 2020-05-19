@@ -1,9 +1,3 @@
 @{
     var notReady = (ViewBag.Ready == null) || (!ViewBag.Ready);
 }
-<div class="form-group">
-    <div>@ViewData["CreateResult"]</div>
-</div>
-<div>
-    <a asp-action="RedirectIndex" disabled="@notReady" class="btn btn-primary">Continue</a>
-</div>

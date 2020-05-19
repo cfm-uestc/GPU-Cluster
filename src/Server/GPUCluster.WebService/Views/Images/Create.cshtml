@@ -10,13 +10,18 @@
 <h4>Image</h4>
 <hr />
 <div class="row">
-    <div id="main" onload="listenOutputStream" class="col-md-4">
+    <div id="main" class="col-md-4">
         <form id="create-form" asp-action="Create" data-ajax="true" data-ajax-method="POST" data-ajax-mode="replace" data-ajax-success="createFinish" data-ajax-update="#ajax-form">
             <div id="ajax-form">
                 @await Html.PartialAsync("Partial/_CreateForm", ViewData)
             </div>
         </form>
     </div>
+</div>
+<code class="row mb-4" id="docker-output">
+</code>
+<div class="row col-md-4 mb-4">
+    <button id="continue-btn" disabled onclick="window.location.href='RedirectIndex'" class="btn btn-primary">Continue</button> 
 </div>
 
 <div>
@@ -26,28 +31,60 @@
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
+        checkImageCreated = function(){
+            $.ajax({
+                url: "CheckImageCreated",
+                type: "POST",
+                data: $("#create-form").serializeArray(),
+                success: function (data, status, xhr) {
+                    if(data.code==200){
+                        $("#continue-btn").prop("disabled", false);
+                    } else{
+                        setTimeout(checkImageCreated, 2000);
+                    }
+                }
+            })
+        }
         createFinish = function (xhr) {
-            console.log($("#create-submit").prop('disabled'))
             if($("#create-submit").prop('disabled')){
-                var evtSource = new EventSource("Create/sse");
-                evtSource.addEventListener("BuildOutput", function(e) { 
-                    console.log(e.data)
-                });
                 $.ajax({
                     url: "CreateFinish",
                     type: "POST",
                     data: $("#create-form").serializeArray(),
                     success: function (data, status, xhr) {
-                        $("#main").append(data)
+                        setTimeout(checkImageCreated, 2000);
                     },
                 });
             }
         };
-        listenOutputStream = function () {
+        (function () {
             var evtSource = new EventSource("Create/sse");
             evtSource.addEventListener("BuildOutput", function(e) { 
-                console.log(e.data)
+                var stream = JSON.parse(e.data);
+                parseDockerStream(stream, function (id, status, progressDetail, progress){
+                    var existing = $(`#docker-output #${id}`);
+                    if (!progressDetail){
+                        progressDetail = null
+                    }
+                    else{
+                        progressDetail = progressDetail.current ? (progressDetail.current / progressDetail.total).toLocaleString(undefined, {style: 'percent', minimumFractionDigits:0}) : null;
+                    }
+                    var showId = `[${id}]`;
+                    var result = [showId, status, progressDetail, progress].filter(Boolean).join(' ');
+                    if (existing.length){
+                        existing.text(result);
+                    }else{
+                        $('#docker-output').append(`<span class="col-md-10" id=${id}>${result}</span> `);
+                    }
+                }, function (stream){
+                    $('#docker-output').append(`<span class="col-md-10">${stream}</span> `);
+                })
             });
-        };
+            evtSource.addEventListener("BuildFinished", function(e) {
+                if(e.data=="ok"){
+                    $("#continue-btn").prop("disabled", false);
+                }
+            })
+        })();
     </script>
 }

@@ -5,12 +5,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
 using System.Threading.Tasks;
 using GPUCluster.Shared.Docker;
+using GPUCluster.Shared.Events;
 using GPUCluster.Shared.Models.Instance;
 
 namespace GPUCluster.Shared.Models.Workload
 {
     public class Image
     {
+        public event EventHandler<StatusChangedEventArgs> BuildStatusChanged;
+
         public Image()
         {
             BaseImageTag = "nvidia/cuda";
@@ -21,10 +24,10 @@ namespace GPUCluster.Shared.Models.Workload
         public string UserID { get; set; }
         public ApplicationUser User { get; set; }
         public ICollection<Container> Containers { get; set; }
-        [Display(Name = "Built image tag")]
+        [Display(Name = "Image tag")]
         public string Tag { get; set; }
         public string ImageTagSuffix { get => User == null ? Tag : Tag.StartsWith(User.UserName + "_") ? Tag.Substring((User.UserName + "_").Length) : Tag; }
-        [Display(Name = "Parent Docker image based-on")]
+        [Display(Name = "Parent Image")]
         public string BaseImageTag { get; set; }
 
         [DataType(DataType.DateTime)]
@@ -32,29 +35,43 @@ namespace GPUCluster.Shared.Models.Workload
         [DataType(DataType.DateTime)]
         public DateTime LastModifiedTime { get; set; }
 
-        private static readonly string _baseDockerFile =
-            "FROM nvidia/cuda:latest\r\n";// +
-
-        // "RUN apt-get update && apt-get install -y apt-utils\r\n" +
-        // "RUN apt-get install -y openssh-server sudo vim nano\r\n" +
-
-        // "COPY user.sh /usr/local/bin/user.sh\r\n" +
-        // "RUN chmod +x /usr/local/bin/user.sh\r\n" +
-        // "RUN /usr/local/bin/user.sh\r\n" +
-        // "RUN rm /usr/local/bin/user.sh\r\n" +
-
-        // "COPY entrypoint.sh /usr/local/bin/entrypoint.sh\r\n" +
-        // "RUN chmod +x /usr/local/bin/entrypoint.sh\r\n" +
-
-        // "EXPOSE 22\r\n" +
-        // "ENTRYPOINT [\"/usr/local/bin/entrypoint.sh\"]\r\n" +
-        // "CMD tail -f /dev/null\r\n";
-
+        private async Task<DirectoryInfo> prepareDockerFiletoBuildAsync()
+        {
+            if (User == null)
+            {
+                throw new NullReferenceException("User is null");
+            }
+            var directory = IOUtils.MakeDirs(Path.Combine("/tmp", "dockerBuild", User.Id));
+            var copiedFiles = IOUtils.Copy(Consts.StaticDockerFileDirectory, directory);
+            BuildStatusChanged?.Invoke(this, new StatusChangedEventArgs()
+            {
+                Message = "Copy files"
+            });
+            var dockerFile = copiedFiles.Find(x => x.Name == "Dockerfile");
+            string lines;
+            using (var reader = dockerFile.OpenText())
+            {
+                lines = await reader.ReadToEndAsync();
+            }
+            lines = string.Format(lines, BaseImageTag, User.UserName, User.UserName);
+            using (var stream = dockerFile.OpenWrite())
+            {
+                using (StreamWriter writer = new StreamWriter(stream))
+                {
+                    await writer.WriteAsync(lines);
+                }
+            }
+            return directory;
+        }
         public async Task<Stream> CreateAndBuildAsync()
         {
-            Invoker invoker = new Invoker();
-            Stream result = await invoker.Build("/home/zhuxiaosu/GPU-Cluster/src/docker/Dockerfile.tar.gz", new string[] { Tag });
-            return result;
+            using (Invoker invoker = new Invoker())
+            {
+                var directory = await prepareDockerFiletoBuildAsync();
+                var tarballFile = await IOUtils.Tar(directory);
+                Stream result = await invoker.Build(tarballFile.FullName, new string[] { $"{Consts.PrivateDockerRepo}:{Tag}" });
+                return result;
+            }
         }
 
         public static async Task PushDockerFileAsync(string v)

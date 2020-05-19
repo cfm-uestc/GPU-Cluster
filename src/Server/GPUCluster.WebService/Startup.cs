@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using GPUCluster.Shared;
 using GPUCluster.Shared.Models.Instance;
 using GPUCluster.WebService.Areas.Identity.Data;
 using GPUCluster.WebService.Service;
@@ -50,7 +53,6 @@ namespace GPUCluster.WebService
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

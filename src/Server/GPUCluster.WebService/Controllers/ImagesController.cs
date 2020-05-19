@@ -12,6 +12,9 @@ using GPUCluster.Shared.Models.Instance;
 using System.IO;
 using GPUCluster.WebService.Service;
 using Lib.AspNetCore.ServerSentEvents;
+using GPUCluster.Shared.Serialization;
+using Microsoft.Extensions.DependencyInjection;
+using GPUCluster.Shared.Events;
 
 namespace GPUCluster.WebService.Controllers
 {
@@ -20,7 +23,6 @@ namespace GPUCluster.WebService.Controllers
         private readonly IdentityDataContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IImageCreationSSEService _imageCreationSSEService;
-
         public ImagesController(IdentityDataContext context, UserManager<ApplicationUser> userManager, IImageCreationSSEService imageCreationSSEService)
         {
             _context = context;
@@ -72,13 +74,44 @@ namespace GPUCluster.WebService.Controllers
             {
                 while (!reader.EndOfStream)
                 {
+                    var result = await reader.ReadLineAsync();
+                    if (result.Contains("Success"))
+                    {
+
+                    }
                     await client.SendEventAsync(new ServerSentEvent()
                     {
                         Type = "BuildOutput",
-                        Data = new string[] { await reader.ReadLineAsync() }
+                        Data = new string[] { result }
                     });
                 }
             }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckImageCreated([Bind("BaseImageTag, ImageID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
+        {
+            var user = await _userManager.GetUserAsync(this.User);
+            try
+            {
+                image = await validateImage(user, image);
+            }
+            catch (ArgumentException)
+            {
+                return new JsonResult(new BasicResponse()
+                {
+                    Status = "ok",
+                    Message = "Image already created.",
+                    Code = 200
+                });
+            }
+            return new JsonResult(new BasicResponse()
+            {
+                Status = "not-found",
+                Message = "Image not found.",
+                Code = 404
+            });
         }
 
         [HttpPost]
@@ -88,20 +121,47 @@ namespace GPUCluster.WebService.Controllers
             var user = await _userManager.GetUserAsync(this.User);
             image = await validateImage(user, image);
             var clients = _imageCreationSSEService.GetClients();
+            var currentClient = clients.FirstOrDefault(x => _userManager.GetUserId(x.User) == user.Id);
+            EventHandler<StatusChangedEventArgs> handler = async (s, e) =>
+            {
+                await currentClient.SendEventAsync(new ServerSentEvent()
+                {
+                    Type = "BuildOutput",
+                    Data = new string[] { $"{{'msg':'{e.Message}'}}" }
+                });
+            };
+            if (currentClient != null)
+            {
+                await currentClient.SendEventAsync(new ServerSentEvent()
+                {
+                    Type = "BuildOutput",
+                    Data = new string[] { "{\"msg\":\"Prepare Dockerfile to build...\"}" }
+                });
+                image.BuildStatusChanged += handler;
+
+            }
             using (Stream result = await image.CreateAndBuildAsync())
             {
-                var currentClient = clients.FirstOrDefault(x => _userManager.GetUserId(x.User) == user.Id);
                 if (currentClient != null)
                 {
-                    pushDockerBuildStream(currentClient, result);
+                    await pushDockerBuildStream(currentClient, result);
+                }
+                else
+                {
+
                 }
             }
-            ViewData["CreateResult"] = "Test";
             _context.Add(image);
             await _context.SaveChangesAsync();
-            ViewBag.Ready = true;
-            return PartialView("Partial/_CreateIndicator", ViewBag);
+            image.BuildStatusChanged -= handler;
+            await currentClient.SendEventAsync(new ServerSentEvent()
+            {
+                Type = "BuildFinished",
+                Data = new string[] { "ok" }
+            });
+            return Ok();
         }
+
 
         private async Task<Image> validateImage(ApplicationUser user, Image image)
         {
