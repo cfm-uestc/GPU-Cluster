@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using GPUCluster.Shared.Models.Instance;
@@ -15,5 +16,7 @@ namespace GPUCluster.Shared.Models.Workload
         public Image Image { get; set; }
         public string Name { get; set; }
         public bool IsRunning { get; set; }
+
+        public ICollection<Mounting> Mountings { get; set; }
     }
 }

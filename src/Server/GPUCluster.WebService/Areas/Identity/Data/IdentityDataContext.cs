@@ -32,5 +32,6 @@ namespace GPUCluster.WebService.Areas.Identity.Data
         public DbSet<GPUCluster.Shared.Models.Workload.Container> Container { get; set; }
 
         public DbSet<GPUCluster.Shared.Models.Workload.Image> Image { get; set; }
+        public DbSet<GPUCluster.Shared.Models.Workload.Mounting> Mounting { get; set; }
     }
 }

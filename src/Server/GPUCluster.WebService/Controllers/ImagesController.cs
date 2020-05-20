@@ -17,9 +17,11 @@ using Microsoft.Extensions.DependencyInjection;
 using GPUCluster.Shared.Events;
 using Docker.DotNet.Models;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Authorization;
 
 namespace GPUCluster.WebService.Controllers
 {
+    [Authorize]
     public class ImagesController : Controller
     {
         private readonly IdentityDataContext _context;
@@ -151,19 +153,16 @@ namespace GPUCluster.WebService.Controllers
                 }
                 try
                 {
-                    await currentClient?.SendEventAsync(new ServerSentEvent()
-                    {
-                        Type = "BuildOutput",
-                        Data = new string[] { JsonConvert.SerializeObject(e, new JsonSerializerSettings()
+                    if (currentClient != null && currentClient.IsConnected)
+                        await currentClient?.SendEventAsync(new ServerSentEvent()
                         {
-                            NullValueHandling = NullValueHandling.Ignore,
-                            DefaultValueHandling = DefaultValueHandling.Ignore
-                        }) }
-                    });
-                    if (e.Error != null)
-                    {
-                        // TODO: push error events.
-                    }
+                            Type = "BuildOutput",
+                            Data = new string[] { JsonConvert.SerializeObject(e, new JsonSerializerSettings()
+                            {
+                                NullValueHandling = NullValueHandling.Ignore,
+                                DefaultValueHandling = DefaultValueHandling.Ignore
+                            }) }
+                        });
                 }
                 catch (InvalidOperationException)
                 {
@@ -217,6 +216,7 @@ namespace GPUCluster.WebService.Controllers
         private async Task<Image> validateImage(ApplicationUser user, Image image)
         {
             image.User = user;
+            image.UserID = user.Id;
             if (!image.Tag.StartsWith(image.User.UserName + "_"))
             {
                 image.Tag = $"{image.User.UserName}_{image.Tag}";

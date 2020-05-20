@@ -9,9 +9,11 @@ using GPUCluster.Shared.Models.Workload;
 using GPUCluster.WebService.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using GPUCluster.Shared.Models.Instance;
+using Microsoft.AspNetCore.Authorization;
 
 namespace GPUCluster.WebService.Controllers
 {
+    [Authorize]
     public class ContainersController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
@@ -60,6 +62,7 @@ namespace GPUCluster.WebService.Controllers
         public Container validateContainer(ApplicationUser user, Container container)
         {
             container.User = user;
+            container.UserID = user.Id;
             var finded = _context.Container.Where(x => x.Name == container.Name && x.UserID == user.Id).ToList();
             if (finded.Count > 0)
             {
