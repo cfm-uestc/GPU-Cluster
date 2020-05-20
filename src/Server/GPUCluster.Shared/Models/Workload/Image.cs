@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Docker.DotNet;
 using Docker.DotNet.Models;
@@ -16,11 +17,12 @@ namespace GPUCluster.Shared.Models.Workload
 {
     public class Image
     {
+        public static readonly string DefaultBaseImage = "nvidia/cuda:latest";
         public event EventHandler<JSONMessage> BuildStatusChanged;
 
         public Image()
         {
-            BaseImageTag = "nvidia/cuda";
+            BaseImageTag = DefaultBaseImage;
         }
 
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -70,18 +72,26 @@ namespace GPUCluster.Shared.Models.Workload
         public async Task<bool> CreateAndBuildAsync()
         {
             using (Invoker invoker = new Invoker())
+            using (CancellationTokenSource cts = new CancellationTokenSource())
             {
                 var directory = await prepareDockerFiletoBuildAsync();
                 var tarballFile = IOUtils.Tar(directory, Path.Combine(directory.FullName, "Dockerfile.tar"));
                 try
                 {
-                    Stream buildOutput = await invoker.BuildAsync(tarballFile.FullName, new string[] { $"{Consts.PrivateDockerRepo}:{Tag}" });
+                    Stream buildOutput = await invoker.BuildAsync(tarballFile.FullName, new string[] { $"{Consts.PrivateDockerRepo}:{Tag}" }, cts.Token);
                     using (var reader = new StreamReader(buildOutput))
                     {
                         while (!reader.EndOfStream)
                         {
                             var result = await reader.ReadLineAsync();
-                            BuildStatusChanged?.Invoke(this, JsonConvert.DeserializeObject<JSONMessage>(result));
+                            var msg = JsonConvert.DeserializeObject<JSONMessage>(result);
+                            BuildStatusChanged?.Invoke(this, msg);
+                            if (msg.Error != null)
+                            {
+                                reader.Close();
+                                cts.Cancel();
+                                return false;
+                            }
                         }
                     }
                     return true;
@@ -105,15 +115,25 @@ namespace GPUCluster.Shared.Models.Workload
 
         public async Task<bool> PushDockerImageAsync()
         {
-            Progress<JSONMessage> progress = new Progress<JSONMessage>(msg =>
-            {
-                BuildStatusChanged?.Invoke(this, msg);
-            });
             try
             {
                 using (Invoker invoker = new Invoker())
+                using (CancellationTokenSource cts = new CancellationTokenSource())
                 {
-                    await invoker.PushAsync(Consts.PrivateDockerRepo, Tag, progress);
+                    Progress<JSONMessage> progress = new Progress<JSONMessage>(msg =>
+                    {
+                        BuildStatusChanged?.Invoke(this, msg);
+                        if (msg.Error != null)
+                        {
+                            cts.Cancel();
+                        }
+                    });
+                    var task = invoker.PushAsync(Consts.PrivateDockerRepo, Tag, progress, cts.Token);
+                    await task;
+                    if (task.IsCanceled)
+                    {
+                        return false;
+                    }
                 }
                 return true;
             }

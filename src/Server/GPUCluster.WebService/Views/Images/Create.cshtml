@@ -111,7 +111,7 @@
                 $('#docker-output span[id]').each(function (i) {
                     $(this).removeAttr('id');
                 })
-                $('#docker-output').append('<span class="col-md-10"> </span> <span class="col-md-10">===================================================</span> <span class="col-md-10"> </span>');
+                $('#docker-output').append('<span class="col-md-10"> </span> <span class="col-md-10">=======================================================================================</span> <span class="col-md-10"> </span>');
                 $('#docker-output').animate({scrollTop: $('#docker-output').get(0).scrollHeight}, 0); 
             });
             evtSource.addEventListener("Success", function (e) {

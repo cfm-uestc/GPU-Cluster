@@ -162,13 +162,14 @@ namespace GPUCluster.WebService.Controllers
                     });
                     if (e.Error != null)
                     {
-                        throw new ArgumentException(e.Error.Message);
+                        // TODO: push error events.
                     }
                 }
-                catch (System.Exception)
+                catch (InvalidOperationException)
                 {
+                    // Occurs when client offline
+                    // TODO: When offline a while, cancel the task
                     currentClient = null;
-                    throw;
                 }
             };
 

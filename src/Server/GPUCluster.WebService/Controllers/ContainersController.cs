@@ -53,9 +53,19 @@ namespace GPUCluster.WebService.Controllers
         // GET: Containers/Create
         public IActionResult Create()
         {
-            ViewData["ImageID"] = new SelectList(_context.Set<Image>(), "ImageID", "ImageID");
-            ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id");
+            ViewData["ImageID"] = new SelectList(_context.Set<Image>(), "ImageID", "Tag");
             return View();
+        }
+
+        public Container validateContainer(ApplicationUser user, Container container)
+        {
+            container.User = user;
+            var finded = _context.Container.Where(x => x.Name == container.Name && x.UserID == user.Id).ToList();
+            if (finded.Count > 0)
+            {
+                throw new ArgumentException();
+            }
+            return container;
         }
 
         // POST: Containers/Create
@@ -65,11 +75,21 @@ namespace GPUCluster.WebService.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("ContainerID,UserID,ImageID,Name,IsRunning")] Container container)
         {
+            ApplicationUser user = await _userManager.GetUserAsync(this.User);
             if (ModelState.IsValid)
             {
-                _context.Add(container);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                try
+                {
+                    container = validateContainer(user, container);
+                    _context.Add(container);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (ArgumentException)
+                {
+                    ModelState.AddModelError("Name", "Container name already exists.");
+                    return View(container);
+                }
             }
             ViewData["ImageID"] = new SelectList(_context.Set<Image>(), "ImageID", "ImageID", container.ImageID);
             ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", container.UserID);
@@ -77,7 +97,7 @@ namespace GPUCluster.WebService.Controllers
         }
 
         // GET: Containers/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(Guid? id)
         {
             if (id == null)
             {
@@ -154,7 +174,7 @@ namespace GPUCluster.WebService.Controllers
         // POST: Containers/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
             var container = await _context.Container.FindAsync(id);
             _context.Container.Remove(container);

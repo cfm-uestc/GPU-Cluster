@@ -8,7 +8,7 @@
 <div class="form-group">
     <label asp-for="BaseImageTag" class="control-label"></label>
     <div>Give a tag to name your image</div>
-    <input asp-for="BaseImageTag" class="form-control" value="@Model?.BaseImageTag" placeholder="baseimage" />
+    <input asp-for="BaseImageTag" class="form-control" value="@Model?.BaseImageTag" placeholder="@GPUCluster.Shared.Models.Workload.Image.DefaultBaseImage" />
     <span asp-validation-for="BaseImageTag" class="text-danger"></span>
 </div>
 <div class="form-group">
