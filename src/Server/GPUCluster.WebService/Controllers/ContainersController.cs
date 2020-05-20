@@ -10,7 +10,6 @@ using GPUCluster.WebService.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using GPUCluster.Shared.Models.Instance;
 using Microsoft.AspNetCore.Authorization;
-
 namespace GPUCluster.WebService.Controllers
 {
     [Authorize]
@@ -94,8 +93,7 @@ namespace GPUCluster.WebService.Controllers
                     return View(container);
                 }
             }
-            ViewData["ImageID"] = new SelectList(_context.Set<Image>(), "ImageID", "ImageID", container.ImageID);
-            ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", container.UserID);
+            ViewData["ImageID"] = new SelectList(_context.Image, "ImageID", "Tag", container.ImageID);
             return View(container);
         }
 
@@ -112,7 +110,7 @@ namespace GPUCluster.WebService.Controllers
             {
                 return NotFound();
             }
-            ViewData["ImageID"] = new SelectList(_context.Set<Image>(), "ImageID", "ImageID", container.ImageID);
+            ViewData["ImageID"] = new SelectList(_context.Image, "ImageID", "ImageID", container.ImageID);
             ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", container.UserID);
             return View(container);
         }
@@ -149,7 +147,7 @@ namespace GPUCluster.WebService.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["ImageID"] = new SelectList(_context.Set<Image>(), "ImageID", "ImageID", container.ImageID);
+            ViewData["ImageID"] = new SelectList(_context.Image, "ImageID", "ImageID", container.ImageID);
             ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", container.UserID);
             return View(container);
         }
