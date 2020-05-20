@@ -2,17 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using Docker.DotNet;
+using Docker.DotNet.Models;
 using GPUCluster.Shared.Docker;
 using GPUCluster.Shared.Events;
 using GPUCluster.Shared.Models.Instance;
+using Newtonsoft.Json;
 
 namespace GPUCluster.Shared.Models.Workload
 {
     public class Image
     {
-        public event EventHandler<StatusChangedEventArgs> BuildStatusChanged;
+        public event EventHandler<JSONMessage> BuildStatusChanged;
 
         public Image()
         {
@@ -41,11 +45,11 @@ namespace GPUCluster.Shared.Models.Workload
             {
                 throw new NullReferenceException("User is null");
             }
-            var directory = IOUtils.MakeDirs(Path.Combine("/tmp", "dockerBuild", User.Id));
-            var copiedFiles = IOUtils.Copy(Consts.StaticDockerFileDirectory, directory);
-            BuildStatusChanged?.Invoke(this, new StatusChangedEventArgs()
+            var directory = IOUtils.MakeDirs(Path.Combine("/tmp", "dockerBuild", User.Id, Tag));
+            var copiedFiles = IOUtils.Copy(Consts.StaticDockerFileDirectory, directory, true);
+            BuildStatusChanged?.Invoke(this, new JSONMessage()
             {
-                Message = "Copy files"
+                Stream = "Prepare file to build"
             });
             var dockerFile = copiedFiles.Find(x => x.Name == "Dockerfile");
             string lines;
@@ -63,20 +67,69 @@ namespace GPUCluster.Shared.Models.Workload
             }
             return directory;
         }
-        public async Task<Stream> CreateAndBuildAsync()
+        public async Task<bool> CreateAndBuildAsync()
         {
             using (Invoker invoker = new Invoker())
             {
                 var directory = await prepareDockerFiletoBuildAsync();
-                var tarballFile = await IOUtils.Tar(directory);
-                Stream result = await invoker.Build(tarballFile.FullName, new string[] { $"{Consts.PrivateDockerRepo}:{Tag}" });
-                return result;
+                var tarballFile = IOUtils.Tar(directory, Path.Combine(directory.FullName, "Dockerfile.tar"));
+                try
+                {
+                    Stream buildOutput = await invoker.BuildAsync(tarballFile.FullName, new string[] { $"{Consts.PrivateDockerRepo}:{Tag}" });
+                    using (var reader = new StreamReader(buildOutput))
+                    {
+                        while (!reader.EndOfStream)
+                        {
+                            var result = await reader.ReadLineAsync();
+                            BuildStatusChanged?.Invoke(this, JsonConvert.DeserializeObject<JSONMessage>(result));
+                        }
+                    }
+                    return true;
+                }
+                catch (DockerApiException e)
+                {
+                    BuildStatusChanged?.Invoke(this, new JSONMessage()
+                    {
+                        Error = new JSONError()
+                        {
+                            Message = e.Message,
+                            Code = -1
+                        },
+                        ErrorMessage = "CRITICAL"
+                    });
+                    return false;
+                }
+
             }
         }
 
-        public static async Task PushDockerFileAsync(string v)
+        public async Task<bool> PushDockerImageAsync()
         {
-            await Task.Delay(5000);
+            Progress<JSONMessage> progress = new Progress<JSONMessage>(msg =>
+            {
+                BuildStatusChanged?.Invoke(this, msg);
+            });
+            try
+            {
+                using (Invoker invoker = new Invoker())
+                {
+                    await invoker.PushAsync(Consts.PrivateDockerRepo, Tag, progress);
+                }
+                return true;
+            }
+            catch (DockerApiException e)
+            {
+                BuildStatusChanged?.Invoke(this, new JSONMessage()
+                {
+                    Error = new JSONError()
+                    {
+                        Message = e.Message,
+                        Code = -1
+                    },
+                    ErrorMessage = "CRITICAL"
+                });
+                return false;
+            }
         }
     }
 }

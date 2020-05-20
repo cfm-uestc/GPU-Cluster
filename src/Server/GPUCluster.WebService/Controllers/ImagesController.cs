@@ -15,6 +15,8 @@ using Lib.AspNetCore.ServerSentEvents;
 using GPUCluster.Shared.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using GPUCluster.Shared.Events;
+using Docker.DotNet.Models;
+using Newtonsoft.Json;
 
 namespace GPUCluster.WebService.Controllers
 {
@@ -116,50 +118,98 @@ namespace GPUCluster.WebService.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateFinish([Bind("BaseImageTag, ImageID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
+        public async Task<IActionResult> TryDiscardChange([Bind("BaseImageTag, ImageID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
+        {
+            try
+            {
+                var user = await _userManager.GetUserAsync(this.User);
+                image = await validateImage(user, image);
+                return Ok();
+            }
+            catch (ArgumentException)
+            {
+                image = await _context.Image.FirstOrDefaultAsync(f => f.Tag == image.Tag);
+                _context.Remove(image);
+                await _context.SaveChangesAsync();
+                return Ok();
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BuildAndCreate([Bind("BaseImageTag, ImageID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
         {
             var user = await _userManager.GetUserAsync(this.User);
             image = await validateImage(user, image);
             var clients = _imageCreationSSEService.GetClients();
             var currentClient = clients.FirstOrDefault(x => _userManager.GetUserId(x.User) == user.Id);
-            EventHandler<StatusChangedEventArgs> handler = async (s, e) =>
+            EventHandler<JSONMessage> handler = async (s, e) =>
             {
-                await currentClient.SendEventAsync(new ServerSentEvent()
+                if (currentClient == null)
                 {
-                    Type = "BuildOutput",
-                    Data = new string[] { $"{{'msg':'{e.Message}'}}" }
-                });
+                    currentClient = clients.FirstOrDefault(x => _userManager.GetUserId(x.User) == user.Id);
+                }
+                try
+                {
+                    await currentClient?.SendEventAsync(new ServerSentEvent()
+                    {
+                        Type = "BuildOutput",
+                        Data = new string[] { JsonConvert.SerializeObject(e, new JsonSerializerSettings()
+                        {
+                            NullValueHandling = NullValueHandling.Ignore,
+                            DefaultValueHandling = DefaultValueHandling.Ignore
+                        }) }
+                    });
+                    if (e.Error != null)
+                    {
+                        throw new ArgumentException(e.Error.Message);
+                    }
+                }
+                catch (System.Exception)
+                {
+                    currentClient = null;
+                    throw;
+                }
             };
-            if (currentClient != null)
-            {
-                await currentClient.SendEventAsync(new ServerSentEvent()
-                {
-                    Type = "BuildOutput",
-                    Data = new string[] { "{\"msg\":\"Prepare Dockerfile to build...\"}" }
-                });
-                image.BuildStatusChanged += handler;
 
-            }
-            using (Stream result = await image.CreateAndBuildAsync())
+            image.BuildStatusChanged += handler;
+            try
             {
-                if (currentClient != null)
+                bool buildResult = await image.CreateAndBuildAsync();
+                if (buildResult)
                 {
-                    await pushDockerBuildStream(currentClient, result);
+                    currentClient = currentClient ?? clients.FirstOrDefault(x => _userManager.GetUserId(x.User) == user.Id);
+                    await currentClient?.SendEventAsync(new ServerSentEvent()
+                    {
+                        Type = "BuildFinished",
+                        Data = new string[] { "ok" }
+                    });
+                    bool pushResult = await image.PushDockerImageAsync();
+                    await currentClient?.SendEventAsync(new ServerSentEvent()
+                    {
+                        Type = "PushFinished",
+                        Data = new string[] { "ok" }
+                    });
+                    _context.Add(image);
+                    await _context.SaveChangesAsync();
+                    image.BuildStatusChanged -= handler;
+                    await currentClient?.SendEventAsync(new ServerSentEvent()
+                    {
+                        Type = "Success",
+                        Data = new string[] { "ok" }
+                    });
+                    return Ok();
                 }
                 else
                 {
-
+                    return BadRequest();
                 }
+
             }
-            _context.Add(image);
-            await _context.SaveChangesAsync();
-            image.BuildStatusChanged -= handler;
-            await currentClient.SendEventAsync(new ServerSentEvent()
+            catch (System.Exception)
             {
-                Type = "BuildFinished",
-                Data = new string[] { "ok" }
-            });
-            return Ok();
+                return BadRequest();
+            }
         }
 
 

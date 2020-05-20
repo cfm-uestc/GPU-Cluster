@@ -29,7 +29,7 @@ namespace GPUCluster.Test
         {
             using (Invoker invoker = new Invoker())
             {
-                var containers = await invoker.Ps();
+                var containers = await invoker.PsAsync();
                 Assert.IsTrue(containers.Count > 0);
                 TestContext.WriteLine(containers[0].Image);
             }
@@ -39,7 +39,7 @@ namespace GPUCluster.Test
         {
             using (Invoker invoker = new Invoker())
             {
-                Stream result = await invoker.Build("/home/zhuxiaosu/GPU-Cluster/src/docker/Dockerfile.tar.gz", new string[] { "gpu_cluster/aspnet_test:tag" });
+                Stream result = await invoker.BuildAsync("/home/zhuxiaosu/GPU-Cluster/src/docker/Dockerfile.tar.gz", new string[] { "gpu_cluster/aspnet_test:tag" });
                 Assert.IsNotNull(result);
             }
         }
