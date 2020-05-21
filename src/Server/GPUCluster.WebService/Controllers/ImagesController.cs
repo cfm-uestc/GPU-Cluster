@@ -142,6 +142,7 @@ namespace GPUCluster.WebService.Controllers
         public async Task<IActionResult> BuildAndCreate([Bind("BaseImageTag, ImageID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
         {
             var user = await _userManager.GetUserAsync(this.User);
+            user.LinuxUser = await _context.LinuxUser.FirstAsync(u => u.ID == user.LinuxUserID);
             image = await validateImage(user, image);
             var clients = _imageCreationSSEService.GetClients();
             var currentClient = clients.FirstOrDefault(x => _userManager.GetUserId(x.User) == user.Id);

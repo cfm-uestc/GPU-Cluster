@@ -24,6 +24,7 @@ namespace GPUCluster.Shared.Models.Workload
         public ApplicationUser User { get; set; }
         public Guid ContainerID { get; set; }
         public Container Container { get; set; }
+        public string Name { get; set; }
         public MountingType Type { get; set; }
         public MountingPath Path { get; set; }
     }

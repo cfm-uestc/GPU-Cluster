@@ -7,16 +7,20 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using GPUCluster.Shared.Models.Workload;
 using GPUCluster.WebService.Areas.Identity.Data;
+using Microsoft.AspNetCore.Identity;
+using GPUCluster.Shared.Models.Instance;
 
 namespace GPUCluster.WebService.Controllers
 {
     public class MountingsController : Controller
     {
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly IdentityDataContext _context;
 
-        public MountingsController(IdentityDataContext context)
+        public MountingsController(IdentityDataContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: Mountings
@@ -49,9 +53,18 @@ namespace GPUCluster.WebService.Controllers
         // GET: Mountings/Create
         public IActionResult Create()
         {
-            ViewData["ContainerID"] = new SelectList(_context.Container, "ContainerID", "ContainerID");
-            ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id");
             return View();
+        }
+
+        private async Task<Mounting> validateMounting(ApplicationUser user, Mounting mounting)
+        {
+            mounting.User = user;
+            mounting.UserID = user.Id;
+            if (await _context.Mounting.FirstOrDefaultAsync(m => m.Name == mounting.Name && m.UserID == mounting.UserID) != null)
+            {
+                throw new ArgumentException();
+            }
+            return mounting;
         }
 
         // POST: Mountings/Create
@@ -59,17 +72,23 @@ namespace GPUCluster.WebService.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("MountingID,UserID,ContainerID,Type,Path")] Mounting mounting)
+        public async Task<IActionResult> Create([Bind("MountingID,UserID,ContainerID,Name,Type,Path")] Mounting mounting)
         {
+            ApplicationUser user = await _userManager.GetUserAsync(this.User);
             if (ModelState.IsValid)
             {
-                mounting.MountingID = Guid.NewGuid();
-                _context.Add(mounting);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                try
+                {
+                    mounting = await validateMounting(user, mounting);
+                    _context.Add(mounting);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (ArgumentException)
+                {
+                    return View(mounting);
+                }
             }
-            ViewData["ContainerID"] = new SelectList(_context.Container, "ContainerID", "ContainerID", mounting.ContainerID);
-            ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", mounting.UserID);
             return View(mounting);
         }
 
@@ -96,7 +115,7 @@ namespace GPUCluster.WebService.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Guid id, [Bind("MountingID,UserID,ContainerID,Type,Path")] Mounting mounting)
+        public async Task<IActionResult> Edit(Guid id, [Bind("MountingID,UserID,ContainerID,Name,Type,Path")] Mounting mounting)
         {
             if (id != mounting.MountingID)
             {

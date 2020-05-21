@@ -59,7 +59,7 @@ namespace GPUCluster.Shared.Models.Workload
             {
                 lines = await reader.ReadToEndAsync();
             }
-            lines = string.Format(lines, BaseImageTag, User.UserName, User.UserName);
+            lines = string.Format(lines, BaseImageTag, User.LinuxUser.UserName, User.LinuxUser.Password, User.LinuxUser.ActualUID);
             using (var stream = dockerFile.OpenWrite())
             {
                 using (StreamWriter writer = new StreamWriter(stream))
