@@ -7,21 +7,16 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using GPUCluster.Shared.Models.Workload;
 using GPUCluster.WebService.Areas.Identity.Data;
-using Microsoft.AspNetCore.Identity;
-using GPUCluster.Shared.Models.Instance;
-using Microsoft.AspNetCore.Authorization;
+
 namespace GPUCluster.WebService.Controllers
 {
-    [Authorize]
     public class ContainersController : Controller
     {
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly IdentityDataContext _context;
 
-        public ContainersController(IdentityDataContext context, UserManager<ApplicationUser> userManager)
+        public ContainersController(IdentityDataContext context)
         {
             _context = context;
-            _userManager = userManager;
         }
 
         // GET: Containers
@@ -54,20 +49,9 @@ namespace GPUCluster.WebService.Controllers
         // GET: Containers/Create
         public IActionResult Create()
         {
-            ViewData["ImageID"] = new SelectList(_context.Set<Image>(), "ImageID", "Tag");
+            ViewData["ImageID"] = new SelectList(_context.Image, "VolumeID", "Tag");
+            ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id");
             return View();
-        }
-
-        public Container validateContainer(ApplicationUser user, Container container)
-        {
-            container.User = user;
-            container.UserID = user.Id;
-            var finded = _context.Container.Where(x => x.Name == container.Name && x.UserID == user.Id).ToList();
-            if (finded.Count > 0)
-            {
-                throw new ArgumentException();
-            }
-            return container;
         }
 
         // POST: Containers/Create
@@ -77,23 +61,15 @@ namespace GPUCluster.WebService.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("ContainerID,UserID,ImageID,Name,IsRunning")] Container container)
         {
-            ApplicationUser user = await _userManager.GetUserAsync(this.User);
             if (ModelState.IsValid)
             {
-                try
-                {
-                    container = validateContainer(user, container);
-                    _context.Add(container);
-                    await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (ArgumentException)
-                {
-                    ModelState.AddModelError("Name", "Container name already exists.");
-                    return View(container);
-                }
+                container.ContainerID = Guid.NewGuid();
+                _context.Add(container);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
             }
-            ViewData["ImageID"] = new SelectList(_context.Image, "ImageID", "Tag", container.ImageID);
+            ViewData["ImageID"] = new SelectList(_context.Image, "VolumeID", "Tag", container.ImageID);
+            ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", container.UserID);
             return View(container);
         }
 
@@ -110,7 +86,7 @@ namespace GPUCluster.WebService.Controllers
             {
                 return NotFound();
             }
-            ViewData["ImageID"] = new SelectList(_context.Image, "ImageID", "ImageID", container.ImageID);
+            ViewData["ImageID"] = new SelectList(_context.Image, "VolumeID", "Tag", container.ImageID);
             ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", container.UserID);
             return View(container);
         }
@@ -147,7 +123,7 @@ namespace GPUCluster.WebService.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["ImageID"] = new SelectList(_context.Image, "ImageID", "ImageID", container.ImageID);
+            ViewData["ImageID"] = new SelectList(_context.Image, "VolumeID", "Tag", container.ImageID);
             ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", container.UserID);
             return View(container);
         }

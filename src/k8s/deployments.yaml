@@ -30,6 +30,8 @@ spec:
           volumeMounts:
             - name: app2-storage
               mountPath: /home
+          securityContext:
+            fsGroup: 2000
       imagePullSecrets:
         - name: regcred
       volumes:

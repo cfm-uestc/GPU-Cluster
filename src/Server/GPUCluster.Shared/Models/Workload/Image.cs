@@ -25,11 +25,13 @@ namespace GPUCluster.Shared.Models.Workload
             BaseImageTag = DefaultBaseImage;
         }
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid ImageID { get; set; }
+        [Key]
+        public Guid VolumeID { get; set; }
+        public Volume Volume { get; set; }
         public string UserID { get; set; }
         public ApplicationUser User { get; set; }
         public ICollection<Container> Containers { get; set; }
+        [Required]
         [Display(Name = "Image tag")]
         public string Tag { get; set; }
         public string ImageTagSuffix { get => User == null ? Tag : Tag.StartsWith(User.UserName + "_") ? Tag.Substring((User.UserName + "_").Length) : Tag; }

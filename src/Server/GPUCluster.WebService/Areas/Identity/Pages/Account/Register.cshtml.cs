@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using GPUCluster.Shared.Models.Workload;
+using GPUCluster.WebService.Areas.Identity.Data;
 
 namespace GPUCluster.WebService.Areas.Identity.Pages.Account
 {
@@ -24,13 +26,16 @@ namespace GPUCluster.WebService.Areas.Identity.Pages.Account
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
+        private readonly IdentityDataContext _context;
 
         public RegisterModel(
+            IdentityDataContext dataContext,
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             ILogger<RegisterModel> logger,
             IEmailSender emailSender)
         {
+            _context = dataContext;
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
@@ -81,7 +86,24 @@ namespace GPUCluster.WebService.Areas.Identity.Pages.Account
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
+                ///
+                /// Modified to add default Linux user and volumes
                 var user = new ApplicationUser { UserName = Input.UserName, Email = Input.Email, LinuxUser = new LinuxUser() { UserName = Input.UserName, Password = Input.UserName } };
+                user.Volumes = new List<GPUCluster.Shared.Models.Workload.Volume>();
+                var publicVolume = new Shared.Models.Workload.Volume()
+                {
+                    Type = VolumeType.Read,
+                    Path = VolumePath.Public,
+                    User = user,
+                };
+                var userDataVolume = new Volume()
+                {
+                    Type = VolumeType.ReadWrite,
+                    Path = VolumePath.Data,
+                    User = user
+                };
+                user.Volumes.Add(publicVolume);
+                user.Volumes.Add(userDataVolume);
                 var result = await _userManager.CreateAsync(user, Input.Password);
                 if (result.Succeeded)
                 {

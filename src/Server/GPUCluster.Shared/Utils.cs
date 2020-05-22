@@ -33,12 +33,23 @@ namespace GPUCluster.Shared
             }
         }
 
-        public static List<FileInfo> Copy(DirectoryInfo sourceDirectory, DirectoryInfo destDirectory, bool overwrite)
+        public static List<FileInfo> Copy(this DirectoryInfo sourceDirectory, DirectoryInfo destDirectory, bool overwrite)
         {
             var copiedFiles = new List<FileInfo>();
             foreach (var file in sourceDirectory.EnumerateFiles())
             {
-                copiedFiles.Add(file.CopyTo(Path.Combine(destDirectory.FullName, file.Name), overwrite));
+                if (!overwrite && File.Exists(Path.Combine(destDirectory.FullName, file.Name)))
+                {
+                    copiedFiles.Add(new FileInfo(Path.Combine(destDirectory.FullName, file.Name)));
+                    continue;
+                }
+                copiedFiles.Add(file.CopyTo(Path.Combine(destDirectory.FullName, file.Name), true));
+            }
+            foreach (var dir in sourceDirectory.EnumerateDirectories())
+            {
+                if (!Directory.Exists(Path.Combine(destDirectory.FullName, dir.Name)))
+                    destDirectory.CreateSubdirectory(dir.Name);
+                copiedFiles.AddRange(Copy(dir, new DirectoryInfo(Path.Combine(destDirectory.FullName, dir.Name)), overwrite));
             }
             return copiedFiles;
         }
@@ -76,6 +87,14 @@ namespace GPUCluster.Shared
             return folderSize;
         }
 
+        internal static DirectoryInfo AddDirectoryIfNotExists(string dirPath)
+        {
+            if (Directory.Exists(dirPath))
+            {
+                return new DirectoryInfo(dirPath);
+            }
+            return Directory.CreateDirectory(dirPath);
+        }
 
         public static FileInfo TarGZ(DirectoryInfo directory, string destTarPath)
         {

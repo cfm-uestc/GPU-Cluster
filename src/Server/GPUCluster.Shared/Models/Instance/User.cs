@@ -14,5 +14,6 @@ namespace GPUCluster.Shared.Models.Instance
         public ICollection<Container> Containers { get; set; }
         public ICollection<Image> Images { get; set; }
         public ICollection<Mounting> Mountings { get; set; }
+        public ICollection<Volume> Volumes { get; set; }
     }
 }

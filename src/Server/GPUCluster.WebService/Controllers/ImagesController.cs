@@ -56,7 +56,7 @@ namespace GPUCluster.WebService.Controllers
 
             var image = await _context.Image
                 .Include(i => i.User)
-                .FirstOrDefaultAsync(m => m.ImageID == id);
+                .FirstOrDefaultAsync(m => m.VolumeID == id);
             if (image == null)
             {
                 return NotFound();
@@ -94,7 +94,7 @@ namespace GPUCluster.WebService.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CheckImageCreated([Bind("BaseImageTag, ImageID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
+        public async Task<IActionResult> CheckImageCreated([Bind("BaseImageTag,VolumeID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
         {
             var user = await _userManager.GetUserAsync(this.User);
             try
@@ -120,7 +120,7 @@ namespace GPUCluster.WebService.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> TryDiscardChange([Bind("BaseImageTag, ImageID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
+        public async Task<IActionResult> TryDiscardChange([Bind("BaseImageTag,VolumeID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
         {
             try
             {
@@ -139,7 +139,7 @@ namespace GPUCluster.WebService.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> BuildAndCreate([Bind("BaseImageTag, ImageID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
+        public async Task<IActionResult> BuildAndCreate([Bind("BaseImageTag,VolumeID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
         {
             var user = await _userManager.GetUserAsync(this.User);
             user.LinuxUser = await _context.LinuxUser.FirstAsync(u => u.ID == user.LinuxUserID);
@@ -226,6 +226,19 @@ namespace GPUCluster.WebService.Controllers
             {
                 throw new ArgumentException();
             }
+            if (string.IsNullOrWhiteSpace(image.BaseImageTag))
+            {
+                image.BaseImageTag = Image.DefaultBaseImage;
+            }
+            var volume = new Volume()
+            {
+                Type = VolumeType.ReadWrite,
+                Path = VolumePath.Home,
+                Image = image,
+                User = user,
+                UserID = user.Id
+            };
+            image.Volume = volume;
             image.CreateTime = DateTime.Now;
             image.LastModifiedTime = image.CreateTime;
             return image;
@@ -236,7 +249,7 @@ namespace GPUCluster.WebService.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("BaseImageTag,ImageID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
+        public async Task<IActionResult> Create([Bind("BaseImageTag,VolumeID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
         {
             ApplicationUser user = await _userManager.GetUserAsync(this.User);
             ViewData["CurrentUser"] = user;
@@ -279,9 +292,9 @@ namespace GPUCluster.WebService.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Guid id, [Bind("ImageID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
+        public async Task<IActionResult> Edit(Guid id, [Bind("VolumeID,UserID,Tag,CreateTime,LastModifiedTime")] Image image)
         {
-            if (id != image.ImageID)
+            if (id != image.VolumeID)
             {
                 return NotFound();
             }
@@ -295,7 +308,7 @@ namespace GPUCluster.WebService.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!ImageExists(image.ImageID))
+                    if (!ImageExists(image.VolumeID))
                     {
                         return NotFound();
                     }
@@ -320,7 +333,7 @@ namespace GPUCluster.WebService.Controllers
 
             var image = await _context.Image
                 .Include(i => i.User)
-                .FirstOrDefaultAsync(m => m.ImageID == id);
+                .FirstOrDefaultAsync(m => m.VolumeID == id);
             if (image == null)
             {
                 return NotFound();
@@ -342,7 +355,7 @@ namespace GPUCluster.WebService.Controllers
 
         private bool ImageExists(Guid id)
         {
-            return _context.Image.Any(e => e.ImageID == id);
+            return _context.Image.Any(e => e.VolumeID == id);
         }
     }
 }
