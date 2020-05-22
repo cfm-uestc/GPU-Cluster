@@ -3,7 +3,7 @@
 
 // Write your JavaScript code.
 
-function parseDockerStream(dockerJson, updateCurrent, appendNextLine) {
+function parseDockerStream(dockerJson, updateCurrent, appendNextLine, showError) {
     if ("stream" in dockerJson) {
         appendNextLine(dockerJson["stream"]);
     }
@@ -14,10 +14,7 @@ function parseDockerStream(dockerJson, updateCurrent, appendNextLine) {
         }
     }
     else if ("error" in dockerJson) {
-        appendNextLine(`error: ${dockerJson["error"]}`)
-        if ("errorDetail" in dockerJson) {
-            appendNextLine(dockerJson["errorDetail"]["message"]);
-        }
+        showError(dockerJson["errorDetail"]["message"]);
     }
     else if ("id" in dockerJson) {
         updateCurrent(dockerJson["id"], dockerJson["status"], dockerJson["progressDetail"], dockerJson["progress"]);

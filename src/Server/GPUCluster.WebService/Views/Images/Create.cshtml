@@ -21,7 +21,7 @@
 <div class="row col-md-4 mb-4">
     <span id="error-block" class="text-danger"></span>
 </div>
-<code class="row mb-4 overflow-auto" style="max-height:50em;" id="docker-output">
+<code class="row mb-4 overflow-auto" style="max-height:50em;color:black;" id="docker-output">
 </code>
 <div class="row col-md-4 mb-4">
     <button id="continue-btn" disabled onclick="window.location.href='RedirectIndex'" class="btn btn-primary">Continue</button> 
@@ -74,8 +74,8 @@
         (function () {
             var evtSource = new EventSource("Create/sse");
             evtSource.addEventListener("BuildOutput", function(e) { 
-                var stream = JSON.parse(e.data);
-                parseDockerStream(stream, function (id, status, progressDetail, progress){
+                var outputjson = JSON.parse(e.data);
+                parseDockerStream(outputjson, function (id, status, progressDetail, progress){
                     var existing = $(`#docker-output #${id}`);
                     if (!progressDetail){
                         progressDetail = null
@@ -96,6 +96,7 @@
                     $('#docker-output').animate({scrollTop: $('#docker-output').get(0).scrollHeight}, 0); 
                 }, function (error){
                     $('#error-block').text("There seems like an error occured, you can check the outputs and try again.");
+                    $('#docker-output').append(`<span class="col-md-10 text-danger">${error}</span> `);
                     $.ajax({
                         url: "TryDiscardChange",
                         type: "POST",
