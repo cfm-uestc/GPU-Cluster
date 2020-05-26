@@ -1,4 +1,4 @@
-@model GPUCluster.Shared.Models.Workload.Container
+@model GPUCluster.WebService.Models.ContainerViewModel
 
 @{
     ViewData["Title"] = "Create";
@@ -13,17 +13,17 @@
         <form asp-action="Create">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
+                <label asp-for="ContainerName" class="control-label"></label>
+                <input asp-for="ContainerName" class="form-control" />
+                <span asp-validation-for="ContainerName" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="ImageID" class="control-label"></label>
-                <select asp-for="ImageID" class ="form-control" asp-items="ViewBag.ImageID"></select>
+                <label asp-for="Image.Tag" class="control-label"></label>
+                <select asp-for="ImageID" class ="form-control" asp-items="ViewBag.Images"></select>
             </div>
             <div class="form-group">
-                <label asp-for="ImageID" class="control-label"></label>
-                <select asp-for="ImageID" class ="form-control" asp-items="ViewBag.VolumeID"></select>
+                <label asp-for="Volume.Name" class="control-label"></label>
+                <select asp-for="VolumeID" class ="form-control" asp-items="ViewBag.Volumes"></select>
             </div>
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />

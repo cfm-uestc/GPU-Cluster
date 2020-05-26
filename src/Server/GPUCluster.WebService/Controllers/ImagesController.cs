@@ -236,7 +236,8 @@ namespace GPUCluster.WebService.Controllers
                 Path = VolumePath.Home,
                 Image = image,
                 User = user,
-                UserID = user.Id
+                UserID = user.Id,
+                Name = image.Tag
             };
             image.Volume = volume;
             image.CreateTime = DateTime.Now;

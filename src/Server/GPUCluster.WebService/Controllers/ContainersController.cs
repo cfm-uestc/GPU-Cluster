@@ -7,16 +7,21 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using GPUCluster.Shared.Models.Workload;
 using GPUCluster.WebService.Areas.Identity.Data;
+using GPUCluster.WebService.Models;
+using Microsoft.AspNetCore.Identity;
+using GPUCluster.Shared.Models.Instance;
 
 namespace GPUCluster.WebService.Controllers
 {
     public class ContainersController : Controller
     {
         private readonly IdentityDataContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public ContainersController(IdentityDataContext context)
+        public ContainersController(IdentityDataContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: Containers
@@ -49,8 +54,8 @@ namespace GPUCluster.WebService.Controllers
         // GET: Containers/Create
         public IActionResult Create()
         {
-            ViewData["ImageID"] = new SelectList(_context.Image, "VolumeID", "Tag");
-            ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id");
+            ViewData["Images"] = new SelectList(_context.Image, "VolumeID", "Tag");
+            ViewData["Volumes"] = new SelectList(_context.Volume.Where(v => v.Path == VolumePath.Home), "VolumeID", "Name");
             return View();
         }
 
@@ -59,18 +64,19 @@ namespace GPUCluster.WebService.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ContainerID,UserID,ImageID,Name,IsRunning")] Container container)
+        public async Task<IActionResult> Create([Bind("ContainerName","ImageID","VolumeID")] ContainerViewModel containerViewModel)
         {
             if (ModelState.IsValid)
             {
-                container.ContainerID = Guid.NewGuid();
-                _context.Add(container);
+                ApplicationUser user = await _userManager.GetUserAsync(this.User);
+                var newContainer = await containerViewModel.ValidateContainerAsync(_context, user);
+                _context.Add(newContainer);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["ImageID"] = new SelectList(_context.Image, "VolumeID", "Tag", container.ImageID);
-            ViewData["UserID"] = new SelectList(_context.Users, "Id", "Id", container.UserID);
-            return View(container);
+            ViewData["Images"] = new SelectList(_context.Image, "VolumeID", "Tag");
+            ViewData["Volumes"] = new SelectList(_context.Volume.Where(v => v.Path == VolumePath.Home), "VolumeID", "Name");
+            return View(containerViewModel);
         }
 
         // GET: Containers/Edit/5

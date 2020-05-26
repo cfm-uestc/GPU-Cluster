@@ -95,12 +95,14 @@ namespace GPUCluster.WebService.Areas.Identity.Pages.Account
                     Type = VolumeType.Read,
                     Path = VolumePath.Public,
                     User = user,
+                    Name = $"{user.UserName}_PUBLICVOLUME"
                 };
                 var userDataVolume = new Volume()
                 {
                     Type = VolumeType.ReadWrite,
                     Path = VolumePath.Data,
-                    User = user
+                    User = user,
+                    Name = $"{user.UserName}_DATAVOLUME"
                 };
                 user.Volumes.Add(publicVolume);
                 user.Volumes.Add(userDataVolume);

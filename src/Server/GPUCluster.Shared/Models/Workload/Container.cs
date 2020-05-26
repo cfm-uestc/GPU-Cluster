@@ -14,6 +14,7 @@ namespace GPUCluster.Shared.Models.Workload
         public ApplicationUser User { get; set; }
         public Guid ImageID { get; set; }
         public Image Image { get; set; }
+        [Required]
         public string Name { get; set; }
         public bool IsRunning { get; set; }
 

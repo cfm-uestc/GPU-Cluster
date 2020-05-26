@@ -42,6 +42,8 @@ namespace GPUCluster.Shared.Models.Workload
                 checkVolumeExists();
             }
         }
+        [Required]
+        [Display(Name="Mounted /home/$USER volume")]
         public string Name { get; set; }
         public VolumeType Type { get; set; }
         public VolumePath Path { get; set; }

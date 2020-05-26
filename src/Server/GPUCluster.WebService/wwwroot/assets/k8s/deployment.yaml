@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: REPLACE_NAME
+  labels:
+    app: gpu-cluster
+spec:
+  selector:
+    matchLabels:
+      app: gpu-cluster
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: gpu-cluster
+    spec:
+      containers:
+        - image: REPLACE_IMAGE
+          name: REPLACE_NAME
+          resources:
+            limits:
+              nvidia.com/gpu: 2
+          env:
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: ""
+          ports:
+            - containerPort: 22
+              name: ssh
+          volumeMounts:
+            - name: REPLACE_MOUNTING_HOME
+              mountPath: /home
+          securityContext:
+            fsGroup: REPLACE_GROUP
+      imagePullSecrets:
+        - name: regcred
+      volumes:
+        - name: REPLACE_VOLUME
+          persistentVolumeClaim:
+            claimName: REPLACE_VOLUME_CLAIM
