@@ -27,7 +27,7 @@ namespace GPUCluster.Test
         [TestMethod]
         public async Task TestDockerClientOpen()
         {
-            using (Invoker invoker = new Invoker())
+            using (DockerInvoker invoker = new DockerInvoker())
             {
                 var containers = await invoker.PsAsync();
                 Assert.IsTrue(containers.Count > 0);
@@ -37,7 +37,7 @@ namespace GPUCluster.Test
         [TestMethod]
         public async Task TestDockerBuild()
         {
-            using (Invoker invoker = new Invoker())
+            using (DockerInvoker invoker = new DockerInvoker())
             {
                 Stream result = await invoker.BuildAsync("/home/zhuxiaosu/GPU-Cluster/src/docker/Dockerfile.tar.gz", new string[] { "gpu_cluster/aspnet_test:tag" });
                 Assert.IsNotNull(result);

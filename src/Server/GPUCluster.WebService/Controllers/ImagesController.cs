@@ -18,6 +18,7 @@ using GPUCluster.Shared.Events;
 using Docker.DotNet.Models;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Authorization;
+using GPUCluster.Shared.Docker;
 
 namespace GPUCluster.WebService.Controllers
 {
@@ -27,11 +28,13 @@ namespace GPUCluster.WebService.Controllers
         private readonly IdentityDataContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IImageCreationSSEService _imageCreationSSEService;
-        public ImagesController(IdentityDataContext context, UserManager<ApplicationUser> userManager, IImageCreationSSEService imageCreationSSEService)
+        private readonly IDockerInvoker _dockerInvoker;
+        public ImagesController(IdentityDataContext context, UserManager<ApplicationUser> userManager, IImageCreationSSEService imageCreationSSEService, IDockerInvoker dockerInvoker)
         {
             _context = context;
             _userManager = userManager;
             _imageCreationSSEService = imageCreationSSEService;
+            _dockerInvoker = dockerInvoker;
         }
 
         // GET: Images
@@ -176,7 +179,7 @@ namespace GPUCluster.WebService.Controllers
             image.BuildStatusChanged += handler;
             try
             {
-                bool buildResult = await image.CreateAndBuildAsync();
+                bool buildResult = await image.CreateAndBuildAsync(_dockerInvoker);
                 if (buildResult)
                 {
                     currentClient = currentClient ?? clients.FirstOrDefault(x => _userManager.GetUserId(x.User) == user.Id);
@@ -185,7 +188,7 @@ namespace GPUCluster.WebService.Controllers
                         Type = "BuildFinished",
                         Data = new string[] { "ok" }
                     });
-                    bool pushResult = await image.PushDockerImageAsync();
+                    bool pushResult = await image.PushDockerImageAsync(_dockerInvoker);
                     await currentClient?.SendEventAsync(new ServerSentEvent()
                     {
                         Type = "PushFinished",

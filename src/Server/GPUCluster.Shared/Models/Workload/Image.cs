@@ -71,9 +71,8 @@ namespace GPUCluster.Shared.Models.Workload
             }
             return directory;
         }
-        public async Task<bool> CreateAndBuildAsync()
+        public async Task<bool> CreateAndBuildAsync(IDockerInvoker invoker)
         {
-            using (Invoker invoker = new Invoker())
             using (CancellationTokenSource cts = new CancellationTokenSource())
             {
                 var directory = await prepareDockerFiletoBuildAsync();
@@ -115,11 +114,10 @@ namespace GPUCluster.Shared.Models.Workload
             }
         }
 
-        public async Task<bool> PushDockerImageAsync()
+        public async Task<bool> PushDockerImageAsync(IDockerInvoker invoker)
         {
             try
             {
-                using (Invoker invoker = new Invoker())
                 using (CancellationTokenSource cts = new CancellationTokenSource())
                 {
                     Progress<JSONMessage> progress = new Progress<JSONMessage>(msg =>

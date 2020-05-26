@@ -9,10 +9,18 @@ using Docker.DotNet.Models;
 
 namespace GPUCluster.Shared.Docker
 {
-    public class Invoker : IDisposable
+    public interface IDockerInvoker
+    {
+        Task<IList<ContainerListResponse>> PsAsync(CancellationToken cancellationToken = default(CancellationToken));
+        Task<CommitContainerChangesResponse> CommitAsync(string containerID, string repo, string tag, string comment = null, string author = null, IList<string> changes = null, bool? pause = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<Stream> BuildAsync(string dockerTarballPath, IList<string> tags, CancellationToken cancellationToken = default(CancellationToken));
+        Task<Stream> BuildAsync(Stream tarStream, IList<string> tags, CancellationToken cancellationToken = default(CancellationToken));
+        Task PushAsync(string imageName, string tag, IProgress<JSONMessage> progress, CancellationToken cancellationToken = default(CancellationToken));
+    }
+    public class DockerInvoker : IDisposable, IDockerInvoker
     {
         private readonly DockerClient _client;
-        public Invoker()
+        public DockerInvoker()
         {
             _client = new DockerClientConfiguration(new Uri("unix:///var/run/docker.sock")).CreateClient();
         }
