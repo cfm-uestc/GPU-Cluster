@@ -11,11 +11,7 @@ namespace GPUCluster.Shared
         public static readonly DirectoryInfo StaticDockerFileDirectory = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "assets", "docker"));
         public static readonly string PrivateDockerRepo = "zhongbazhu/cfm_private";
         public static readonly string PublicRootPath = Path.Combine("/tmp", "TestPublicMount");
-
-
         public static AuthConfig PrivateDockerRepoToken;
-        
-        
         internal static readonly IList<V1ContainerPort> K8sContainerPortALL;
     }
 }
