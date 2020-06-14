@@ -1,9 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UserSecretsId>b7a5f235-e329-49a6-b91b-ceeaf9b2e18f</UserSecretsId>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Docker.DotNet" Version="3.125.2" />
     <PackageReference Include="Lib.AspNetCore.ServerSentEvents" Version="5.0.0" />
@@ -22,9 +22,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.2" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\GPUCluster.Shared\GPUCluster.Shared.csproj" />
   </ItemGroup>
-
 </Project>

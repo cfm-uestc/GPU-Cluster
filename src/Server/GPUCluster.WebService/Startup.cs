@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Docker.DotNet.Models;
 using GPUCluster.Shared;
 using GPUCluster.Shared.Docker;
 using GPUCluster.Shared.Models.Instance;
@@ -58,10 +59,12 @@ namespace GPUCluster.WebService
         {
             if (env.IsDevelopment())
             {
+                Consts.PrivateDockerRepoToken = Configuration.GetSection("PrivateDockerRepoToken").Get<AuthConfig>();
                 app.UseDeveloperExceptionPage();
             }
             else
             {
+                Consts.PrivateDockerRepoToken = JsonConvert.DeserializeObject<AuthConfig>(IOUtils.ReadString(System.Environment.GetEnvironmentVariable("GPUCLUSTER_DOCKER_TOKEN")));
                 app.UseExceptionHandler("/Home/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();

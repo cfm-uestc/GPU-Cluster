@@ -87,6 +87,18 @@ namespace GPUCluster.Shared
             return folderSize;
         }
 
+        public static string ReadString(string path)
+        {
+            if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
+            {
+                return File.ReadAllText(path);
+            }
+            else
+            {
+                throw new ArgumentException($"{nameof(path)} is invalid");
+            }
+        }
+
         internal static DirectoryInfo AddDirectoryIfNotExists(string dirPath)
         {
             if (Directory.Exists(dirPath))
