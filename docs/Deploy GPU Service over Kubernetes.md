@@ -1,5 +1,11 @@
 # Title
 
+## Infrastructures
+
+* Install NVIDIA GPU driver and CUDA:
+
+Go to https://developer.nvidia.com/cuda-downloads and install the `deb` version.
+
 ## Install Docker
 
 Install docker and change cgroup manager to systemd

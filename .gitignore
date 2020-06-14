@@ -4,3 +4,4 @@ obj/
 Migrations/
 *.db
 src/Server/GPUCluster.Shared/Consts.Private.cs
+.vs/
