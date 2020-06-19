@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 using GPUCluster.Shared.Models.Workload;
@@ -19,10 +20,11 @@ namespace GPUCluster.Shared.K8s
         }
         public async Task DeployAsync(Container container)
         {
-            V1Deployment deployment = getDeploymentFromContainer(container);
+            V1Deployment deployment = GetDeploymentFromContainer(container);
+            await _client.CreateNamespacedDeploymentAsync(deployment, "default");
         }
 
-        private V1Deployment getDeploymentFromContainer(Container container)
+        private V1Deployment GetDeploymentFromContainer(Container container)
         {
             return new V1Deployment(
                        metadata: new V1ObjectMeta(
@@ -59,13 +61,13 @@ namespace GPUCluster.Shared.K8s
                                                new V1EnvVar("NVIDIA_VISIBLE_DEVICES", value: null)
                                            },
                                            ports: Consts.K8sContainerPortALL,
-                                           volumeMounts: getMountsFromContainer(container))
+                                           volumeMounts: GetMountsFromContainer(container).ToArray())
                                    },
                                    imagePullSecrets: new V1LocalObjectReference[]
                                    {
                                        new V1LocalObjectReference(name: "regcred")
                                    },
-                                   volumes: getVolumesFromContainer(container),
+                                   volumes: GetVolumesFromContainer(container).ToArray(),
                                    securityContext: new V1PodSecurityContext(
                                        fsGroup: container.User.LinuxUser.ActualUID,
                                        runAsGroup: container.User.LinuxUser.ActualUID,
@@ -73,14 +75,20 @@ namespace GPUCluster.Shared.K8s
                            strategy: new V1DeploymentStrategy(type: "Recreate")));
         }
 
-        private IList<V1Volume> getVolumesFromContainer(Container container)
+        private IEnumerable<V1Volume> GetVolumesFromContainer(Container container)
         {
-            throw new NotImplementedException();
+            foreach (Mounting mounting in container.Mountings)
+            {
+                yield return new V1Volume(mounting.Volume.Name, glusterfs: new V1GlusterfsVolumeSource("endpoints", mounting.Volume.SourcePath, mounting.Volume.Type == VolumeType.Read));
+            }
         }
 
-        private IList<V1VolumeMount> getMountsFromContainer(Container container)
+        private IEnumerable<V1VolumeMount> GetMountsFromContainer(Container container)
         {
-            throw new NotImplementedException();
+            foreach (Mounting mounting in container.Mountings)
+            {
+                yield return new V1VolumeMount(mounting.Volume.TargetPath, mounting.Volume.Name, readOnlyProperty: mounting.Volume.Type == VolumeType.Read);
+            }
         }
     }
 }

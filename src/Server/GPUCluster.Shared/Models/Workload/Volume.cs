@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+
 using GPUCluster.Shared.Models.Instance;
 
 namespace GPUCluster.Shared.Models.Workload
@@ -29,7 +30,7 @@ namespace GPUCluster.Shared.Models.Workload
             set
             {
                 user = value;
-                checkVolumeExists();
+                CheckVolumeExists();
             }
         }
         private Image image;
@@ -39,19 +40,33 @@ namespace GPUCluster.Shared.Models.Workload
             set
             {
                 image = value;
-                checkVolumeExists();
+                CheckVolumeExists();
             }
         }
         [Required]
-        [Display(Name="Mounted /home/$USER volume")]
+        [Display(Name = "Mounted /home/$USER volume")]
         public string Name { get; set; }
         public VolumeType Type { get; set; }
         public VolumePath Path { get; set; }
 
         public ICollection<Mounting> Mountings { get; set; }
+        public string SourcePath
+        {
+            get
+            {
+                return $"/{User.UserName}/{Name}/{Path}";
+            }
+        }
+        public string TargetPath
+        {
+            get
+            {
+                return $"/{User.UserName}/{Name}/{Path}";
+            }
+        }
 
         private bool checkValid = false;
-        private void checkVolumeExists()
+        private void CheckVolumeExists()
         {
             if (checkValid)
             {
