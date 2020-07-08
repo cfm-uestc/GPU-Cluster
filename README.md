@@ -37,4 +37,4 @@ GPU 集群升级，需要在现有系统上搭建 Kubernetes 集群、GlusterFS 
 
 ## 技术细节和演示
 
-请参考 [src/README.md](./src/README.md)
+请参考 [docs/README.md](./docs/README.md)
