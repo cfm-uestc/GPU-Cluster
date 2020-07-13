@@ -70,7 +70,8 @@ namespace GPUCluster.WebService.Controllers
             {
                 ApplicationUser user = await _userManager.GetUserAsync(this.User);
                 var newContainer = await containerViewModel.ValidateContainerAsync(_context, user);
-                _context.Add(newContainer);
+                await _context.Mounting.AddRangeAsync(newContainer.Mountings);
+                await _context.Container.AddAsync(newContainer);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
@@ -113,7 +114,7 @@ namespace GPUCluster.WebService.Controllers
             {
                 try
                 {
-                    _context.Update(container);
+                    _context.Container.Update(container);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)

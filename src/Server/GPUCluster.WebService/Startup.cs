@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Docker.DotNet.Models;
 using GPUCluster.Shared;
 using GPUCluster.Shared.Docker;
+using GPUCluster.Shared.K8s;
 using GPUCluster.Shared.Models.Instance;
 using GPUCluster.WebService.Areas.Identity.Data;
 using GPUCluster.WebService.Service;
@@ -47,6 +48,7 @@ namespace GPUCluster.WebService
             services.AddTransient<IUserProvider, UserIdProvider>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<IDockerInvoker, DockerInvoker>();
+            services.AddSingleton<IK8sInvoker, K8sInvoker>();
 
             services.AddServerSentEvents<IImageCreationSSEService, ImageCreationSSEService>();
 

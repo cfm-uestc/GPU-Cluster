@@ -40,20 +40,27 @@ namespace GPUCluster.WebService.Models
             Mounting publicMounting = new Mounting
             {
                 Volume = publicVolume,
-                Container = this.Container
+                Container = this.Container,
+                User = user,
+                UserID = user.Id
             };
             Mounting dataMounting = new Mounting
             {
                 Volume = dataVolume,
-                Container = this.Container
+                Container = this.Container,
+                User = user,
+                UserID = user.Id
             };
             Mounting homeMounting = new Mounting
             {
                 Volume = this.Volume,
-                Container = this.Container
+                Container = this.Container,
+                User = user,
+                UserID = user.Id
             };
             Container.Mountings = new Mounting[] { publicMounting, dataMounting, homeMounting };
             Container.User = user;
+            Container.UserID = user.Id;
             return Container;
         }
     }
