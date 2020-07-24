@@ -49,7 +49,7 @@ user@host:~$ distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
 user@host:~$ curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
 user@host:~$ curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
 
-user@host:~$ sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+user@host:~$ sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit nvidia-container-runtime
 ```
 
 Check the docker runtine has been set correctly
